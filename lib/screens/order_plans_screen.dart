@@ -26,9 +26,6 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
     _loadBudgetPlans();
   }
 
-  // ===========================================================
-  // LOAD ALL EXISTING PLANS (for dots + plan details)
-  // ===========================================================
   void _loadBudgetPlans() {
     _budgetPlansFuture = _supabaseService.getBudgetPlans();
     _budgetPlansFuture.then((plans) {
@@ -39,9 +36,6 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
     });
   }
 
-  // ===========================================================
-  // LOAD PLAN FOR SPECIFIC DATE
-  // ===========================================================
   void _loadPlanForSelectedDate() async {
     final selectedDateStr =
         "${_selectedDay.year}-${_selectedDay.month.toString().padLeft(2, '0')}-${_selectedDay.day.toString().padLeft(2, '0')}";
@@ -61,9 +55,6 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
     }
   }
 
-  // ===========================================================
-  // UI
-  // ===========================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,19 +77,19 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
 
             const SizedBox(height: 20),
 
-            // RETURN SELECTED DATE BACK TO HOMESCREEN
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context, _selectedDay);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 80, vertical: 15),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
               ),
               child: const Text(
                 'ADD MORE FOOD',
-                style: TextStyle(fontFamily: 'HowdyBun', color: Colors.white, fontSize: 20),
+                style: TextStyle(
+                    fontFamily: 'HowdyBun', color: Colors.white, fontSize: 20),
               ),
             ),
 
@@ -111,9 +102,6 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
     );
   }
 
-  // ===========================================================
-  // TABLE CALENDAR WITH DOT MARKERS
-  // ===========================================================
   Widget _buildCalendar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -129,19 +117,13 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
         day.year == _selectedDay.year &&
             day.month == _selectedDay.month &&
             day.day == _selectedDay.day,
-
-        // ======================================
-        // MARKERS (DOTS FOR DAYS WITH PLAN)
-        // ======================================
         eventLoader: (day) {
           final dateStr =
               "${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
 
           final hasPlan = _budgetPlans.any((p) => p['date'] == dateStr);
-
           return hasPlan ? ['PLAN_EXISTS'] : [];
         },
-
         calendarStyle: CalendarStyle(
           markerSize: 12.0,
           markerDecoration: const BoxDecoration(
@@ -149,29 +131,18 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
             shape: BoxShape.circle,
           ),
           markersAlignment: Alignment.bottomCenter,
-          markersMaxCount: 1,  // ------- TEXT STYLE SETTINGS -------
-          defaultTextStyle: const TextStyle(
-            fontFamily: 'HowdyBun',
-            fontSize: 16,
-          ),
+          markersMaxCount: 1,
+          defaultTextStyle:
+          const TextStyle(fontFamily: 'HowdyBun', fontSize: 16),
           weekendTextStyle: const TextStyle(
-            fontFamily: 'HowdyBun',
-            fontSize: 16,
-            color: Colors.red,
-          ),
+              fontFamily: 'HowdyBun', fontSize: 16, color: Colors.red),
           todayTextStyle: const TextStyle(
-            fontFamily: 'HowdyBun',
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-          selectedTextStyle: const TextStyle(
-            fontFamily: 'HowdyBun',
-            fontSize: 16,
-            color: Colors.white,
-          ),
+              fontFamily: 'HowdyBun',
+              fontWeight: FontWeight.bold,
+              fontSize: 16),
+          selectedTextStyle:
+          const TextStyle(fontFamily: 'HowdyBun', fontSize: 16, color: Colors.white),
         ),
-
-        // SELECT DATE
         onDaySelected: (selectedDay, focusedDay) {
           setState(() {
             _selectedDay = selectedDay;
@@ -179,22 +150,15 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
           });
           _loadPlanForSelectedDate();
         },
-
         headerStyle: const HeaderStyle(
           titleCentered: true,
           formatButtonVisible: false,
-          titleTextStyle: TextStyle(
-            fontFamily: 'HowdyBun',
-            fontSize: 20,
-          ),
+          titleTextStyle: TextStyle(fontFamily: 'HowdyBun', fontSize: 20),
         ),
       ),
     );
   }
 
-  // ===========================================================
-  // ORDER DETAILS SECTION
-  // ===========================================================
   Widget _buildOrderDetails() {
     if (_selectedPlan == null) {
       return Container(
@@ -205,10 +169,8 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
           borderRadius: BorderRadius.circular(15),
         ),
         child: const Center(
-          child: Text(
-            'No plan for this date.',
-            style: TextStyle(fontFamily: 'HowdyBun', fontSize: 18),
-          ),
+          child: Text('No plan for this date.',
+              style: TextStyle(fontFamily: 'HowdyBun', fontSize: 18)),
         ),
       );
     }
@@ -219,8 +181,7 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
 
     final totalCost = items.fold(
       0.0,
-          (sum, item) =>
-      sum + (item['menu_items']['price'] as num).toDouble(),
+          (sum, item) => sum + (item['menu_items']['price'] as num).toDouble(),
     );
 
     return Column(
@@ -255,44 +216,59 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
 
         const SizedBox(height: 10),
 
+        /// UPDATED LIST WITH DELETE BUTTON
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: items.length,
           itemBuilder: (context, index) {
-            final item = items[index]['menu_items'];
+            final selectedItem = items[index];
+            final item = selectedItem['menu_items'];
+            final selectedItemId = selectedItem['id'];
+
             return Card(
-              margin: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 10),
+              margin:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
+                borderRadius: BorderRadius.circular(15),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item['name']!,
+                          Text(item['name'],
                               style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'HowdyBun',
-                              )),
-                          Text('\$${item['price']}',
-                              style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
                                   fontFamily: 'HowdyBun')),
+                          Text("\$${item['price']}",
+                              style: const TextStyle(
+                                  fontSize: 16, fontFamily: 'HowdyBun')),
                         ],
                       ),
                     ),
+
                     if (item['name'] == 'Fries')
                       Image.asset(
                         'lib/assets/images/fries.png',
                         width: 80,
                         height: 80,
                       ),
+
+                    IconButton(
+                      icon: const Icon(Icons.delete,
+                          color: Colors.red, size: 32),
+                      onPressed: () async {
+                        await _supabaseService
+                            .deleteSelectedMenuItem(selectedItemId);
+                        _loadPlanForSelectedDate();
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -300,13 +276,11 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
           },
         ),
 
-        const SizedBox(height: 10),
-
         Container(
           padding: const EdgeInsets.all(15),
           margin: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
-            color: Colors.green[300],
+            color: Colors.brown,
             borderRadius: BorderRadius.circular(15),
           ),
           child: Row(
@@ -315,15 +289,16 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
               Text(
                 'TOTAL: \$${totalCost.toStringAsFixed(2)}',
                 style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'HowdyBun',
-                    fontSize: 20,
-                    color: Colors.white),
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'HowdyBun',
+                  fontSize: 20,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
         ),
-
+        const SizedBox(height: 10),
         const SizedBox(height: 20),
       ],
     );

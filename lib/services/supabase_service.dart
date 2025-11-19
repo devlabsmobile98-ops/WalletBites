@@ -43,5 +43,10 @@ class SupabaseService {
     });
   }
 
-  // ... other methods for updating and deleting ...
+  // Delete an item from the budget plan
+  Future<void> deleteSelectedMenuItem(String id) async {
+    await _client.from('selected_menu_items').delete().eq('id', id);
+  }
+
+// ... other methods for updating and deleting ...
 }

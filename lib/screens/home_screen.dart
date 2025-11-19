@@ -254,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen>
             const TextInputType.numberWithOptions(decimal: true),
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 48,
+              fontSize: 70,
               fontWeight: FontWeight.bold,
               fontFamily: 'HowdyBun',
             ),
@@ -263,19 +263,31 @@ class _HomeScreenState extends State<HomeScreen>
               border: InputBorder.none,
             ),
           ),
-          const SizedBox(height: 10),
 
-          // ⭐ SHOW ACTIVE DATE
-          Text(
-            _formattedDate(_activeDate),
-            style: const TextStyle(fontSize: 16, fontFamily: 'HowdyBun'),
-          ),
+          const SizedBox(height: 5),
 
-          const SizedBox(height: 10),
-          const Text(
-            'TARGET BUDGET',
-            style: TextStyle(
-                fontSize: 16, color: Colors.grey, fontFamily: 'HowdyBun'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Budget: ',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'HowdyBun',
+                  color: Colors.green,
+                ),
+              ),
+
+              Text(
+                _formattedDate(_activeDate),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontFamily: 'HowdyBun',
+                  color: Colors.black,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -361,7 +373,11 @@ class _HomeScreenState extends State<HomeScreen>
                     Text(
                       '\$${item['price']}',
                       style: const TextStyle(
-                          fontSize: 16, fontFamily: 'HowdyBun'),
+                        fontSize: 22,   // ⬅ bigger
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'HowdyBun',
+                        color: Colors.redAccent,
+                      ),
                     ),
                   ],
                 ),

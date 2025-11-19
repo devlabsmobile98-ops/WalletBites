@@ -70,7 +70,7 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
       backgroundColor: Colors.red[400],
       appBar: AppBar(
         backgroundColor: Colors.yellow[600],
-        title: const Text('My Order Plans',
+        title: const Text('Dates & Order Plans',
             style: TextStyle(fontFamily: 'HowdyBun', fontSize: 20)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -98,7 +98,7 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
               ),
               child: const Text(
                 'ADD MORE FOOD',
-                style: TextStyle(fontFamily: 'HowdyBun', color: Colors.white),
+                style: TextStyle(fontFamily: 'HowdyBun', color: Colors.white, fontSize: 20),
               ),
             ),
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:wallet_bites/services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OrderPlansScreen extends StatefulWidget {
   const OrderPlansScreen({super.key});
@@ -19,6 +20,9 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
   DateTime _focusedDay = DateTime.now();
 
   Map<String, dynamic>? _selectedPlan;
+
+  /// NEW → Store all plans for the selected day
+  List<Map<String, dynamic>> _plansForSelectedDate = [];
 
   @override
   void initState() {
@@ -40,8 +44,13 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
     final selectedDateStr =
         "${_selectedDay.year}-${_selectedDay.month.toString().padLeft(2, '0')}-${_selectedDay.day.toString().padLeft(2, '0')}";
 
-    final plans = _budgetPlans.where((p) => p['date'] == selectedDateStr);
-    final plan = plans.isNotEmpty ? plans.first : null;
+    // NEW: All plans for this day
+    _plansForSelectedDate =
+    _budgetPlans.where((p) => p['date'] == selectedDateStr).toList()
+      ..sort((a, b) => (a['plan_number'] as int).compareTo(b['plan_number']));
+
+    // ORIGINAL BEHAVIOR: load the FIRST plan by default
+    final plan = _plansForSelectedDate.isNotEmpty ? _plansForSelectedDate.first : null;
 
     if (plan != null) {
       final items = await _supabaseService.getSelectedMenuItems(plan['id']);
@@ -55,6 +64,81 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
     }
   }
 
+  /// Dialog for switching between plans
+  void _showSwitchPlanDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          title: const Text(
+            "Select Plan",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _plansForSelectedDate.map((plan) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // --- Select Plan ---
+                    InkWell(
+                      onTap: () async {
+                        Navigator.pop(context);
+
+                        final items = await _supabaseService
+                            .getSelectedMenuItems(plan['id']);
+
+                        setState(() {
+                          _selectedPlan = {'plan': plan, 'items': items};
+                        });
+                      },
+                      child: Text(
+                        "Plan ${plan['plan_number']}",
+                        style: const TextStyle(
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+
+                    // --- Trash Icon to DELETE PLAN ---
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () async {
+                        // DELETE PLAN
+                        await Supabase.instance.client
+                            .from('budget_plans')
+                            .delete()
+                            .eq('id', plan['id']);
+
+                        // Also delete selected_menu_items for that plan
+                        await Supabase.instance.client
+                            .from('selected_menu_items')
+                            .delete()
+                            .eq('plan_id', plan['id']);
+
+                        Navigator.pop(context);
+
+                        // Reload plans after deletion
+                        _loadBudgetPlans();
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,6 +161,7 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
 
             const SizedBox(height: 20),
 
+            // ADD MORE FOOD
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context, _selectedDay);
@@ -89,7 +174,28 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
               child: const Text(
                 'ADD MORE FOOD',
                 style: TextStyle(
-                    fontFamily: 'HowdyBun', color: Colors.white, fontSize: 20),
+                    fontFamily: 'HowdyBun',
+                    color: Colors.white,
+                    fontSize: 20),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // SWITCH PLAN BUTTON
+            ElevatedButton(
+              onPressed: _showSwitchPlanDialog,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.brown,
+                padding:
+                const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
+              ),
+              child: const Text(
+                '   SWITCH PLAN   ',
+                style: TextStyle(
+                    fontFamily: 'HowdyBun',
+                    color: Colors.white,
+                    fontSize: 20),
               ),
             ),
 
@@ -117,13 +223,15 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
         day.year == _selectedDay.year &&
             day.month == _selectedDay.month &&
             day.day == _selectedDay.day,
+
+        // YOUR RED DOTS → 100% PRESERVED
         eventLoader: (day) {
           final dateStr =
               "${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
-
           final hasPlan = _budgetPlans.any((p) => p['date'] == dateStr);
           return hasPlan ? ['PLAN_EXISTS'] : [];
         },
+
         calendarStyle: CalendarStyle(
           markerSize: 12.0,
           markerDecoration: const BoxDecoration(
@@ -140,9 +248,10 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
               fontFamily: 'HowdyBun',
               fontWeight: FontWeight.bold,
               fontSize: 16),
-          selectedTextStyle:
-          const TextStyle(fontFamily: 'HowdyBun', fontSize: 16, color: Colors.white),
+          selectedTextStyle: const TextStyle(
+              fontFamily: 'HowdyBun', fontSize: 16, color: Colors.white),
         ),
+
         onDaySelected: (selectedDay, focusedDay) {
           setState(() {
             _selectedDay = selectedDay;
@@ -150,6 +259,7 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
           });
           _loadPlanForSelectedDate();
         },
+
         headerStyle: const HeaderStyle(
           titleCentered: true,
           formatButtonVisible: false,
@@ -216,7 +326,6 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
 
         const SizedBox(height: 10),
 
-        /// UPDATED LIST WITH DELETE BUTTON
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -227,8 +336,7 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
             final selectedItemId = selectedItem['id'];
 
             return Card(
-              margin:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),
               ),
@@ -280,7 +388,7 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
           padding: const EdgeInsets.all(15),
           margin: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
-            color: Colors.brown,
+            color: Colors.deepPurple,
             borderRadius: BorderRadius.circular(15),
           ),
           child: Row(
@@ -298,6 +406,7 @@ class _OrderPlansScreenState extends State<OrderPlansScreen> {
             ],
           ),
         ),
+
         const SizedBox(height: 10),
         const SizedBox(height: 20),
       ],

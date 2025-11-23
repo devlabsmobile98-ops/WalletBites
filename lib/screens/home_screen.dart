@@ -1,3 +1,4 @@
+// Import Material for Design and Screens for Navigation
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wallet_bites/screens/login_screen.dart';
@@ -7,28 +8,31 @@ import 'package:wallet_bites/services/supabase_service.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  // Create State for Home Screen for Saving
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+// Logic Controller for Home Screen
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final SupabaseService _supabaseService = SupabaseService();
+  late TabController _tabController; // Tab Controller for UI
+  final SupabaseService _supabaseService = SupabaseService(); // Instantiate Supabase
 
-  late Future<List<Map<String, dynamic>>> _menuItemsFuture;
+  late Future<List<Map<String, dynamic>>> _menuItemsFuture; // Loading Menu Items in Rendering
 
-  DateTime _activeDate = DateTime.now();
+  DateTime _activeDate = DateTime.now(); // Currently Selected Date for Order Plan
   final TextEditingController _budgetController =
   TextEditingController(text: '00.00');
 
-  double _targetBudget = 00.00;
-  double _currentTotal = 00.00;
+  double _targetBudget = 00.00; // Target Budget for Order Plan
+  double _currentTotal = 00.00; // Total Cost
 
   String? _planId;
 
   @override
   void initState() {
+    // Initialize State And Load Initial Data
     super.initState();
 
     _tabController = TabController(length: 3, vsync: this);
@@ -53,16 +57,17 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    // Dispose Controllers And Clean Up
     _tabController.dispose();
     _budgetController.dispose();
     super.dispose();
   }
 
   Future<void> _loadPlanForDate(DateTime date) async {
+    // Load Budget Plan And Selected Items For Given Date
     final dateStr = date.toIso8601String().substring(0, 10);
     final userId = Supabase.instance.client.auth.currentUser!.id;
 
-    // Load ALL plans for this date
     final allPlans = await Supabase.instance.client
         .from('budget_plans')
         .select()
@@ -80,7 +85,6 @@ class _HomeScreenState extends State<HomeScreen>
           ? "00.00"
           : _targetBudget.toStringAsFixed(2);
 
-
       final items = await _supabaseService.getSelectedMenuItems(_planId!);
       _currentTotal = items.fold(
           00.00,
@@ -97,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _itemAdded(String menuItemId, double price) async {
+    // Add Item To Current Plan And Update Total Cost
     if (_currentTotal + price > _targetBudget) {
       showDialog(
         context: context,
@@ -125,8 +130,8 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() {});
   }
 
-  // EDIT ITEM
   void _showEditMenuItemDialog(Map<String, dynamic> item) {
+    // Show Dialog To Edit Existing Menu Item
     final nameCtrl = TextEditingController(text: item['name']);
     final priceCtrl = TextEditingController(text: item['price'].toString());
 
@@ -168,8 +173,8 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // DELETE ITEM
   void _deleteMenuItem(String id) async {
+    // Delete Menu Item From Database
     await Supabase.instance.client.from('menu_items').delete().eq('id', id);
     setState(() {
       _menuItemsFuture = _supabaseService.getMenuItems();
@@ -178,6 +183,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Build Main Home Screen UI
     return Scaffold(
       backgroundColor: Colors.red[400],
       body: SafeArea(
@@ -215,9 +221,10 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildHeader() {
+    // Build Header With Title And Logout Button
     return SafeArea(
       child: Container(
-        height: 60, // FIXED HEADER HEIGHT
+        height: 60,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Stack(
           alignment: Alignment.center,
@@ -234,11 +241,9 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
             ),
-
-            // LOGOUT ICON — NOW PERFECTLY ALIGNED
             Positioned(
               right: 0,
-              top: 3, // <-- ADJUST THIS FOR PERFECT VERTICAL ALIGNMENT
+              top: 3,
               child: IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white),
                 onPressed: () async {
@@ -260,8 +265,8 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-
   Widget _buildBudgetCard() {
+    // Build Budget Input Card And Add Plan Button
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
@@ -293,19 +298,17 @@ class _HomeScreenState extends State<HomeScreen>
                     fontSize: 18, fontFamily: 'HowdyBun'))
           ]),
 
-          // ADD PLAN BUTTON
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () async {
               final newPlan = await _supabaseService.addBudgetPlan(
                 _activeDate,
-                00.00, // New plans start with a budget of 0
+                00.00,
               );
 
               setState(() {
                 _planId = newPlan['id'];
 
-                // Reset the budget + totals when new plan is added
                 _targetBudget = 00.00;
                 _budgetController.text = "00.00";
                 _currentTotal = 00.00;
@@ -327,6 +330,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildTabs() {
+    // Build Category Tabs (Food, Drink, Dessert)
     return TabBar(
       controller: _tabController,
       indicatorColor: Colors.yellow[600],
@@ -342,6 +346,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildMenuTabs() {
+    // Build Tab Views For Menu Categories
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _menuItemsFuture,
       builder: (_, snapshot) {
@@ -360,6 +365,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildMenuList(List<Map<String, dynamic>> items) {
+    // Build Scrollable List Of Menu Items
     return ListView.builder(
         itemCount: items.length,
         itemBuilder: (_, index) {
@@ -397,14 +403,10 @@ class _HomeScreenState extends State<HomeScreen>
                                   color: Colors.redAccent)),
                         ]),
                   ),
-
-                  // Pencil icon (edit)
                   IconButton(
                     icon: const Icon(Icons.edit, color: Colors.blue, size: 30),
                     onPressed: () => _showEditMenuItemDialog(item),
                   ),
-
-                  // Trash icon (delete)
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red, size: 30),
                     onPressed: () => _deleteMenuItem(item['id']),
@@ -417,10 +419,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   String _formattedDate(DateTime date) {
+    // Format Date Into Readable String
     return "${_monthName(date.month)} ${date.day}, ${date.year}";
   }
 
   String _monthName(int m) {
+    // Convert Month Number To Month Name
     const months = [
       "January","February","March","April","May","June",
       "July","August","September","October","November","December"
